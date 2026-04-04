@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CalcuMental — Plataforma de Cálculo Mental</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+
+/* ── Layout ─────────────────────────────────────────────── */
+body {
+  background: var(--c-primary-900);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Background decoration ──────────────────────────────── */
+.bg-grid {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(129,140,248,.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(129,140,248,.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+.bg-orb {
+  position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+  filter: blur(80px);
+}
+.bg-orb-1 {
+  width: 500px; height: 500px; top: -180px; left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(99,102,241,.22) 0%, transparent 70%);
+}
+.bg-orb-2 {
+  width: 320px; height: 320px; bottom: -100px; right: -80px;
+  background: radial-gradient(circle, rgba(217,119,6,.15) 0%, transparent 70%);
+}
+
+/* ── Container ──────────────────────────────────────────── */
+.landing {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 2rem 1.5rem;
+  gap: 0;
+  max-width: 540px;
+  width: 100%;
+}
+
+/* ── Logo ───────────────────────────────────────────────── */
+.logo-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .6rem; margin-bottom: 2.8rem;
+  animation: fadeUp .6s ease both;
+}
+.logo-icon {
+  width: 76px; height: 76px; border-radius: 22px;
+  background: linear-gradient(135deg, var(--c-primary-500) 0%, var(--c-accent) 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+  box-shadow: 0 8px 32px rgba(99,102,241,.45), 0 2px 8px rgba(0,0,0,.3);
+  position: relative;
+}
+.logo-icon::after {
+  content: '';
+  position: absolute; inset: -2px; border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255,255,255,.25), transparent);
+  pointer-events: none;
+}
+.logo-name {
+  font-family: var(--font-display);
+  font-size: 2.8rem; font-weight: 700;
+  color: #fff; letter-spacing: -.03em; line-height: 1;
+}
+.logo-tagline {
+  color: var(--c-primary-300);
+  font-size: .88rem; font-weight: 400;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+
+/* ── Cards ──────────────────────────────────────────────── */
+.entry-cards {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1rem; width: 100%;
+  animation: fadeUp .6s .12s ease both;
+}
+
+.entry-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 1rem; padding: 2rem 1.5rem 1.75rem;
+  border-radius: var(--radius-xl);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.11);
+  cursor: pointer; text-decoration: none;
+  color: #fff;
+  backdrop-filter: blur(10px);
+  transition: background var(--t-base), border-color var(--t-base),
+              transform var(--t-slow), box-shadow var(--t-slow);
+  position: relative; overflow: hidden;
+}
+.entry-card::before {
+  content: '';
+  position: absolute; inset: 0; opacity: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.08), transparent);
+  transition: opacity var(--t-base);
+}
+.entry-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,.24); }
+.entry-card:hover::before { opacity: 1; }
+.entry-card:hover .entry-arrow { transform: translateX(3px); }
+.entry-card:active { transform: translateY(-2px) scale(.98); }
+
+.entry-card.student:hover { box-shadow: 0 12px 40px rgba(99,102,241,.28); }
+.entry-card.teacher:hover { box-shadow: 0 12px 40px rgba(217,119,6,.22); }
+
+.entry-icon {
+  width: 60px; height: 60px; border-radius: var(--radius-lg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.7rem; flex-shrink: 0;
+}
+.entry-card.student .entry-icon { background: rgba(99,102,241,.28); }
+.entry-card.teacher .entry-icon { background: rgba(217,119,6,.28); }
+
+.entry-label {
+  font-size: 1.1rem; font-weight: 600; letter-spacing: -.01em;
+}
+.entry-hint {
+  font-size: .8rem; color: rgba(255,255,255,.48);
+  text-align: center; line-height: 1.45;
+}
+.entry-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(255,255,255,.1);
+  font-size: .95rem; margin-top: .25rem;
+  transition: transform var(--t-base), background var(--t-base);
+}
+.entry-card:hover .entry-arrow { background: rgba(255,255,255,.18); }
+
+/* ── Footer ─────────────────────────────────────────────── */
+.landing-footer {
+  margin-top: 2.5rem;
+  color: rgba(255,255,255,.2);
+  font-size: .75rem; text-align: center; line-height: 1.8;
+  animation: fadeUp .6s .24s ease both;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 440px) {
+  .logo-name { font-size: 2.2rem; }
+  .entry-cards { grid-template-columns: 1fr; max-width: 300px; }
+  .entry-card { flex-direction: row; padding: 1.4rem 1.5rem; text-align: left; }
+  .entry-card .entry-hint { text-align: left; }
+  .entry-arrow { margin-top: 0; margin-left: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+
+<main class="landing">
+
+  <!-- Logo -->
+  <div class="logo-wrap">
+    <div class="logo-icon">🧮</div>
+    <div class="logo-name">CalcuMental</div>
+    <div class="logo-tagline">Plataforma de cálculo mental</div>
+  </div>
+
+  <!-- Entry cards -->
+  <div class="entry-cards">
+    <a href="student.html" class="entry-card student">
+      <div class="entry-icon">✏️</div>
+      <div class="entry-label">Soy estudiante</div>
+      <div class="entry-hint">Accede a tu control con el código de la clase</div>
+      <div class="entry-arrow">→</div>
+    </a>
+
+    <a href="teacher.html" class="entry-card teacher">
+      <div class="entry-icon">📊</div>
+      <div class="entry-label">Soy docente</div>
+      <div class="entry-hint">Gestiona controles y analiza resultados</div>
+      <div class="entry-arrow">→</div>
+    </a>
+  </div>
+
+  <!-- Footer -->
+  <div class="landing-footer">
+    CalcuMental · Plataforma educativa matemática<br>
+    Diseñada para el aula
+  </div>
+
+</main>
+
+</body>
+</html>

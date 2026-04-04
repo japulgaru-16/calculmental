@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CalcuMental — Control</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<style>
+
+/* ── Base ───────────────────────────────────────────────── */
+body {
+  background: var(--c-primary-900);
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 1rem;
+}
+.bg-grid {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(129,140,248,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(129,140,248,.06) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* ── Screen system ──────────────────────────────────────── */
+.screen {
+  display: none; flex-direction: column; align-items: center;
+  width: 100%; max-width: 500px;
+  position: relative; z-index: 1;
+}
+.screen.active { display: flex; animation: fadeUp .4s ease both; }
+
+.s-eyebrow {
+  font-size: .75rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--c-primary-300);
+  margin-bottom: .4rem;
+}
+.s-heading {
+  font-family: var(--font-display); color: #fff;
+  font-size: 2rem; text-align: center; margin-bottom: .5rem; line-height: 1.2;
+}
+.s-sub { color: rgba(255,255,255,.45); font-size: .9rem; text-align: center; margin-bottom: 2rem; }
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN: INGRESO
+═══════════════════════════════════════════════════════════ */
+#screen-ingreso .ingreso-card {
+  width: 100%; background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--radius-xl); padding: 2rem;
+  backdrop-filter: blur(12px);
+}
+#screen-ingreso .form-label  { color: rgba(255,255,255,.7); }
+#screen-ingreso .form-hint   { color: rgba(255,255,255,.3); }
+#screen-ingreso .form-error  { color: #fca5a5; }
+#screen-ingreso .form-input  {
+  background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.18);
+  color: #fff;
+}
+#screen-ingreso .form-input::placeholder { color: rgba(255,255,255,.3); }
+#screen-ingreso .form-input:focus {
+  border-color: var(--c-primary-400);
+  box-shadow: 0 0 0 3px rgba(129,140,248,.2);
+  background: rgba(255,255,255,.1);
+}
+#screen-ingreso .form-input.is-valid   { border-color: #34d399; }
+#screen-ingreso .form-input.is-invalid { border-color: #f87171; box-shadow: 0 0 0 3px rgba(248,113,113,.15); }
+
+/* RUT status badge sobre fondo oscuro */
+#screen-ingreso .rut-status.ok  { color: #34d399; }
+#screen-ingreso .rut-status.err { color: #f87171; }
+
+.codigo-input {
+  font-family: var(--font-mono) !important;
+  text-transform: uppercase; text-align: center;
+  letter-spacing: .18em; font-size: 1.15rem !important;
+}
+.back-link {
+  display: block; text-align: center; margin-top: 1.1rem;
+  color: rgba(255,255,255,.28); font-size: .8rem;
+  transition: color var(--t-fast);
+}
+.back-link:hover { color: rgba(255,255,255,.6); }
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN: ESPERA
+═══════════════════════════════════════════════════════════ */
+.espera-anim {
+  display: flex; gap: 8px; align-items: flex-end; height: 48px;
+  margin-bottom: 2rem;
+}
+.espera-bar {
+  width: 8px; border-radius: 4px;
+  background: var(--c-primary-400);
+  animation: barBounce 1.2s ease-in-out infinite;
+}
+.espera-bar:nth-child(2) { animation-delay: .18s; }
+.espera-bar:nth-child(3) { animation-delay: .36s; }
+.espera-bar:nth-child(4) { animation-delay: .54s; }
+@keyframes barBounce {
+  0%,100% { height: 10px; opacity: .4; }
+  50%      { height: 44px; opacity: 1; }
+}
+.espera-info {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--radius-lg); padding: 1.2rem 2rem;
+  text-align: center; width: 100%;
+}
+.espera-nombre  { font-size: 1.2rem; font-weight: 600; color: #fff; }
+.espera-rut     { font-size: .8rem; color: var(--c-primary-300); font-family: var(--font-mono); margin-top: 2px; }
+.espera-control { font-size: .88rem; color: rgba(255,255,255,.5); margin-top: .4rem; }
+.espera-pulse   { color: rgba(255,255,255,.3); font-size: .78rem; margin-top: 1.5rem; }
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN: EJERCICIO
+═══════════════════════════════════════════════════════════ */
+.ej-wrap { width: 100%; display: flex; flex-direction: column; gap: 1rem; }
+
+/* Global timer bar */
+.global-bar-wrap { width: 100%; }
+.global-bar-meta {
+  display: flex; justify-content: space-between;
+  color: rgba(255,255,255,.45); font-size: .75rem; margin-bottom: 4px;
+  font-family: var(--font-mono);
+}
+.global-bar-track { height: 5px; background: rgba(255,255,255,.1); border-radius: 99px; overflow: hidden; }
+.global-bar-fill  {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--c-primary-400), var(--c-accent));
+  transition: width 1s linear, background .5s;
+}
+.global-bar-fill.urgent { background: var(--c-danger); }
+
+/* Top row */
+.ej-toprow {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+.ej-progress-wrap { flex: 1; }
+.ej-progress-label {
+  font-size: .75rem; font-weight: 600; color: rgba(255,255,255,.5);
+  margin-bottom: 4px; display: flex; justify-content: space-between;
+}
+.ej-progress-track { height: 4px; background: rgba(255,255,255,.12); border-radius: 99px; overflow: hidden; }
+.ej-progress-fill  { height: 100%; border-radius: 99px; background: var(--c-accent); transition: width .4s ease; }
+
+/* Circular per-question timer */
+.perq-timer {
+  position: relative; width: 58px; height: 58px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.perq-svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+.perq-track { fill: none; stroke: rgba(255,255,255,.1); stroke-width: 4; }
+.perq-fill  { fill: none; stroke: var(--c-accent); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset .9s linear, stroke .3s; }
+.perq-fill.urgent { stroke: var(--c-danger); }
+.perq-text {
+  font-family: var(--font-mono); font-size: 1rem; font-weight: 600;
+  color: #fff; position: relative; z-index: 1;
+}
+.rel-timer {
+  font-family: var(--font-mono); font-size: .85rem; font-weight: 500;
+  color: rgba(255,255,255,.45);
+}
+
+/* Exercise card */
+.ej-card {
+  background: var(--c-surface); border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl); padding: 1.8rem 2rem;
+  display: flex; flex-direction: column; gap: 1.2rem;
+  border: 1px solid var(--c-border);
+}
+.ej-card-header {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+}
+.ej-num  { font-size: .78rem; font-weight: 600; color: var(--c-text-3); }
+.ej-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+
+.math-display {
+  min-height: 80px; display: flex; align-items: center; justify-content: center;
+  padding: 1rem 1.5rem; background: var(--c-bg); border-radius: var(--radius-md);
+  border: 1px solid var(--c-border); text-align: center; overflow: auto;
+}
+.math-display .katex-display { margin: 0; }
+.math-display .katex { font-size: 1.9rem; }
+
+/* Answer area */
+.answer-section { display: flex; flex-direction: column; gap: 6px; }
+.answer-lbl { font-size: .78rem; font-weight: 600; color: var(--c-text-3); text-transform: uppercase; letter-spacing: .06em; }
+
+.answer-normal input {
+  font-family: var(--font-mono); font-size: 1.2rem;
+  text-align: center; font-weight: 500;
+  border: 2px solid var(--c-primary-300);
+  border-radius: var(--radius-md); padding: 11px 16px;
+  width: 100%; color: var(--c-text);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  background: var(--c-surface); outline: none;
+}
+.answer-normal input:focus {
+  border-color: var(--c-primary-600);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+}
+
+/* Fraction input */
+.answer-frac { display: none; align-items: center; gap: 10px; justify-content: center; }
+.answer-frac.visible { display: flex; }
+.frac-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.frac-input {
+  width: 90px; font-family: var(--font-mono); font-size: 1.1rem;
+  text-align: center; padding: 8px; border: 2px solid var(--c-primary-300);
+  border-radius: var(--radius-md); outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.frac-input:focus { border-color: var(--c-primary-600); box-shadow: 0 0 0 3px rgba(99,102,241,.15); }
+.frac-lbl { font-size: .7rem; color: var(--c-text-3); font-weight: 600; }
+.frac-sep { font-size: 1.6rem; color: var(--c-text-3); line-height: 1; }
+.answer-hint { font-size: .76rem; color: var(--c-text-3); text-align: center; }
+
+/* Navigation */
+.ej-nav { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.dots { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; flex: 1; }
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  transition: background .2s, transform .2s;
+}
+.dot.answered  { background: var(--c-accent); }
+.dot.current   { background: #fff; transform: scale(1.25); }
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN: RESUMEN
+═══════════════════════════════════════════════════════════ */
+.resumen-wrap { width: 100%; display: flex; flex-direction: column; gap: 1rem; }
+
+.score-hero {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--radius-xl); padding: 2rem 1.5rem;
+  text-align: center; backdrop-filter: blur(8px);
+}
+.score-pct {
+  font-family: var(--font-display);
+  font-size: 5rem; font-weight: 700; color: #fff; line-height: 1;
+}
+.score-pct.grade-a { color: #6ee7b7; }
+.score-pct.grade-b { color: var(--c-accent-light); }
+.score-pct.grade-c { color: #fca5a5; }
+.score-caption { color: rgba(255,255,255,.5); font-size: .88rem; margin-top: .35rem; }
+.score-bar-track { height: 6px; background: rgba(255,255,255,.1); border-radius: 99px; overflow: hidden; margin-top: 1rem; }
+.score-bar-fill  { height: 100%; border-radius: 99px; background: #6ee7b7; transition: width 1s ease .3s; }
+
+.res-mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.res-mini {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--radius-lg); padding: 1rem 1.2rem; color: #fff;
+}
+.res-mini-val   { font-size: 1.8rem; font-weight: 700; line-height: 1.1; }
+.res-mini-label { font-size: .72rem; font-weight: 600; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+.res-list { display: flex; flex-direction: column; gap: .45rem; }
+.res-section-title { font-size: .72rem; font-weight: 700; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .1rem; }
+.res-item {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--radius-md); padding: .7rem .9rem;
+}
+.res-icon {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .72rem; font-weight: 700; flex-shrink: 0;
+}
+.res-icon.ok   { background: var(--c-success); color: #fff; }
+.res-icon.err  { background: var(--c-danger);  color: #fff; }
+.res-icon.skip { background: rgba(255,255,255,.15); color: rgba(255,255,255,.5); }
+.res-ej-label  { flex: 1; color: rgba(255,255,255,.7); font-size: .85rem; }
+.res-answer    { font-family: var(--font-mono); font-size: .78rem; color: rgba(255,255,255,.4); }
+.saved-note    { text-align: center; color: rgba(255,255,255,.35); font-size: .82rem; padding: .5rem 0; }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div id="toast-container"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     SCREEN 1: INGRESO
+═════════════════════════════════════════════════════════ -->
+<div id="screen-ingreso" class="screen active">
+  <div class="s-eyebrow">🧮 CalcuMental</div>
+  <h1 class="s-heading">Control de<br>Cálculo Mental</h1>
+  <p class="s-sub">Ingresa tus datos y el código del control</p>
+
+  <div class="ingreso-card">
+
+    <!-- Nombre -->
+    <div class="form-group">
+      <label class="form-label">Nombre completo <span class="req">*</span></label>
+      <input type="text" id="inp-nombre" class="form-input"
+        placeholder="Ej: María González" autocomplete="name">
+    </div>
+
+    <!-- RUT  ─────────────────────────────────────────────
+         Formato automático: 12.345.678-9
+         Validación dígito verificador en tiempo real
+    ───────────────────────────────────────────────────── -->
+    <div class="form-group">
+      <label class="form-label">RUT <span class="req">*</span></label>
+      <div class="rut-wrap">
+        <input type="text" id="inp-rut" class="form-input"
+          placeholder="Ej: 12.345.678-9"
+          maxlength="12" autocomplete="off"
+          oninput="onRutInput(this)"
+          onblur="onRutBlur(this)">
+        <span class="rut-status" id="rut-status"></span>
+      </div>
+      <span class="form-hint" id="rut-hint">Se usará para tu seguimiento académico</span>
+    </div>
+
+    <!-- Código -->
+    <div class="form-group mb-md">
+      <label class="form-label">Código del control <span class="req">*</span></label>
+      <input type="text" id="inp-codigo" class="form-input codigo-input"
+        placeholder="MAT-001" maxlength="14">
+      <span class="form-hint">Tu docente indicará el código del control activo</span>
+    </div>
+
+    <button class="btn btn-primary btn-full btn-lg" onclick="ingresar()">
+      Ingresar al control →
+    </button>
+    <a href="index.html" class="back-link">← Volver al inicio</a>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     SCREEN 2: SALA DE ESPERA
+═════════════════════════════════════════════════════════ -->
+<div id="screen-espera" class="screen">
+  <div class="espera-anim">
+    <div class="espera-bar"></div>
+    <div class="espera-bar"></div>
+    <div class="espera-bar"></div>
+    <div class="espera-bar"></div>
+  </div>
+  <h2 class="s-heading">Sala de espera</h2>
+  <p class="s-sub">El control comenzará cuando tu docente lo active</p>
+  <div class="espera-info">
+    <div class="espera-nombre"  id="espera-nombre"></div>
+    <div class="espera-rut"     id="espera-rut"></div>
+    <div class="espera-control" id="espera-control"></div>
+  </div>
+  <p class="espera-pulse" id="espera-pulse">Verificando estado…</p>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     SCREEN 3: EJERCICIO
+═════════════════════════════════════════════════════════ -->
+<div id="screen-ejercicio" class="screen">
+  <div class="ej-wrap">
+
+    <!-- Global timer bar -->
+    <div id="global-bar" class="global-bar-wrap" style="display:none">
+      <div class="global-bar-meta">
+        <span>Tiempo restante</span>
+        <span id="global-timer-text" class="font-mono"></span>
+      </div>
+      <div class="global-bar-track">
+        <div class="global-bar-fill" id="global-bar-fill"></div>
+      </div>
+    </div>
+
+    <!-- Progress row -->
+    <div class="ej-toprow">
+      <div class="ej-progress-wrap">
+        <div class="ej-progress-label">
+          <span>Ejercicio <strong id="ej-current-num">1</strong> de <span id="ej-total-num">10</span></span>
+          <span id="ej-answered-label">0 respondidos</span>
+        </div>
+        <div class="ej-progress-track">
+          <div class="ej-progress-fill" id="ej-prog-fill"></div>
+        </div>
+      </div>
+
+      <!-- Per-question timer -->
+      <div id="perq-timer-wrap" class="perq-timer" style="display:none">
+        <svg class="perq-svg" width="58" height="58" viewBox="0 0 58 58">
+          <circle class="perq-track" cx="29" cy="29" r="25"/>
+          <circle class="perq-fill" id="perq-circle" cx="29" cy="29" r="25"
+            stroke-dasharray="157.08" stroke-dashoffset="0"/>
+        </svg>
+        <span class="perq-text" id="perq-secs">30</span>
+      </div>
+
+      <!-- Relative timer -->
+      <div id="rel-timer" class="rel-timer">00:00</div>
+    </div>
+
+    <!-- Exercise card -->
+    <div class="ej-card">
+      <div class="ej-card-header">
+        <span class="ej-num" id="ej-num-label">Ejercicio 1</span>
+        <div class="ej-tags" id="ej-tags"></div>
+      </div>
+      <div class="math-display" id="math-display"></div>
+      <div class="answer-section">
+        <div class="answer-lbl">Tu respuesta</div>
+        <div class="answer-normal" id="answer-normal">
+          <input type="text" id="answer-main"
+            placeholder="Escribe tu respuesta aquí…"
+            autocomplete="off" inputmode="decimal"
+            onkeydown="onAnswerKey(event)">
+        </div>
+        <div class="answer-frac" id="answer-frac">
+          <div class="frac-col">
+            <input type="number" class="frac-input" id="frac-num" placeholder="a">
+            <div class="frac-lbl">numerador</div>
+          </div>
+          <div class="frac-sep">/</div>
+          <div class="frac-col">
+            <input type="number" class="frac-input" id="frac-den" placeholder="b">
+            <div class="frac-lbl">denominador</div>
+          </div>
+        </div>
+        <div class="answer-hint" id="answer-hint"></div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="ej-nav">
+      <button class="btn btn-white btn-sm" id="btn-prev" onclick="navegarEj(-1)">← Anterior</button>
+      <div class="dots" id="dots-wrap"></div>
+      <button class="btn btn-primary btn-sm" id="btn-next" onclick="navegarEj(1)">Siguiente →</button>
+    </div>
+
+    <button class="btn btn-accent btn-full btn-lg" id="btn-finish"
+      style="display:none" onclick="confirmarFin()">
+      ✔ Finalizar control
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     SCREEN 4: RESUMEN
+═════════════════════════════════════════════════════════ -->
+<div id="screen-resumen" class="screen">
+  <div class="resumen-wrap">
+    <div class="score-hero">
+      <div class="score-pct" id="res-pct">—</div>
+      <div class="score-caption">de las respuestas correctas</div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" id="res-bar" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="res-mini-grid">
+      <div class="res-mini">
+        <div class="res-mini-val"   id="res-correctas">—</div>
+        <div class="res-mini-label">Correctas</div>
+      </div>
+      <div class="res-mini">
+        <div class="res-mini-val"   id="res-tiempo">—</div>
+        <div class="res-mini-label">Tiempo total</div>
+      </div>
+    </div>
+    <div class="res-list">
+      <div class="res-section-title">Detalle de respuestas</div>
+      <div id="res-items"></div>
+    </div>
+    <p class="saved-note" id="saved-note">Guardando respuestas…</p>
+    <a href="index.html" class="btn btn-white btn-full">← Volver al inicio</a>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MODAL: CONFIRMAR FIN
+═════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-fin">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3 class="modal-title">¿Finalizar el control?</h3>
+      <button class="modal-close" onclick="cerrarModal('modal-fin')">✕</button>
+    </div>
+    <p style="color:var(--c-text-2); margin-bottom:.5rem">
+      Tienes <strong id="pending-count">0</strong> ejercicio(s) sin responder.
+    </p>
+    <p style="color:var(--c-text-3); font-size:.85rem">
+      Una vez finalizado no podrás modificar tus respuestas.
+    </p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-fin')">Volver</button>
+      <button class="btn btn-accent" onclick="finalizarControl()">Sí, finalizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     SCRIPTS
+═════════════════════════════════════════════════════════ -->
+<script>
+/* ── Config ─────────────────────────────────────────────── */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxVDYO1dLS6_EcSwbSJfeaFqrL9fuErBDD-k5hD6tTs6k8GTlQUtl0WIUqvXGnrk-LS/exec';
+
+/* ── State ──────────────────────────────────────────────── */
+const S = {
+  nombre: '', rut: '', rutFormateado: '', codigo: '', control: null,
+  ejercicios: [], respuestas: [],
+  idx: 0,
+  pollInterval: null,
+  relSecs: 0, relInterval: null,
+  globalSecsLeft: 0, globalInterval: null,
+  perqSecsLeft: 0,  perqInterval:   null,
+  startTime: null
+};
+
+/* ── Utils ──────────────────────────────────────────────── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'fadeOutRight .3s ease forwards';
+    setTimeout(() => el.remove(), 300);
+  }, 3000);
+}
+
+function fmtTime(secs) {
+  const m = String(Math.floor(secs / 60)).padStart(2, '0');
+  const s = String(secs % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function renderMath(el, latex) {
+  el.innerHTML = '';
+  if (window.katex) {
+    try { katex.render(latex, el, { throwOnError: false, displayMode: true }); return; }
+    catch (e) {}
+  }
+  el.textContent = latex;
+}
+
+function opLabel(op) {
+  return { suma:'Suma', resta:'Resta', mult:'Mult.', div:'Div.',
+           pot:'Potencia', log:'Logaritmo', raiz:'Raíz' }[op] || op;
+}
+function conjLabel(c) {
+  return { N:'ℕ Nat.', Z:'ℤ Ent.', Q:'ℚ Rac.' }[c] || c;
+}
+
+/* ── API ────────────────────────────────────────────────── */
+async function apiGet(action, params = {}) {
+  const url = new URL(API_URL);
+  url.searchParams.set('action', action);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const r = await fetch(url.toString(), { redirect: 'follow' });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data = await r.json();
+  if (data && data.error) throw new Error(data.error);
+  return data;
+}
+
+async function apiPost(body) {
+  const r = await fetch(API_URL, {
+    method: 'POST', redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data = await r.json();
+  if (data && data.error) throw new Error(data.error);
+  return data;
+}
+
+/* ════════════════════════════════════════════════════════
+   RUT — FORMATO Y VALIDACIÓN  v2.0
+═════════════════════════════════════════════════════════ */
+
+// Formatea mientras escribe: 12.345.678-9
+function onRutInput(input) {
+  let val   = input.value.replace(/[^0-9kK]/g, '').toUpperCase();
+  let fmt   = '';
+
+  if (val.length > 9) val = val.slice(0, 9);
+
+  const num = val.slice(0, -1);
+  const dv  = val.slice(-1);
+
+  if (num.length > 6) {
+    fmt = num.slice(0, -6) + '.' + num.slice(-6, -3) + '.' + num.slice(-3) + '-' + dv;
+  } else if (num.length > 3) {
+    fmt = num.slice(0, -3) + '.' + num.slice(-3) + '-' + dv;
+  } else if (num.length > 0) {
+    fmt = num + '-' + dv;
+  } else {
+    fmt = val;
+  }
+
+  // Mantener cursor al final
+  input.value = fmt;
+  S.rutFormateado = fmt;
+
+  // Validación en tiempo real (solo si hay suficientes dígitos)
+  const limpio = val.replace(/[^0-9kK]/gi, '');
+  if (limpio.length >= 7) {
+    const valido = validarRut(fmt);
+    const statusEl = document.getElementById('rut-status');
+    const hintEl   = document.getElementById('rut-hint');
+    input.classList.toggle('is-valid',   valido);
+    input.classList.toggle('is-invalid', !valido);
+    statusEl.className = 'rut-status ' + (valido ? 'ok' : 'err');
+    statusEl.textContent = valido ? '✓' : '✗';
+    hintEl.textContent = valido
+      ? 'RUT válido'
+      : 'Dígito verificador incorrecto — revisa el RUT';
+  } else {
+    // Limpiar estado si está incompleto
+    input.classList.remove('is-valid', 'is-invalid');
+    document.getElementById('rut-status').textContent = '';
+    document.getElementById('rut-hint').textContent = 'Se usará para tu seguimiento académico';
+  }
+}
+
+// Al perder foco: validación final
+function onRutBlur(input) {
+  const val = input.value.trim();
+  if (!val) return;
+  const valido = validarRut(val);
+  const statusEl = document.getElementById('rut-status');
+  input.classList.toggle('is-valid',   valido);
+  input.classList.toggle('is-invalid', !valido);
+  statusEl.className = 'rut-status ' + (valido ? 'ok' : 'err');
+  statusEl.textContent = valido ? '✓' : '✗';
+}
+
+// Validación del dígito verificador RUT chileno
+function validarRut(rutCompleto) {
+  try {
+    const limpio = String(rutCompleto).replace(/[.\-\s]/g, '').toUpperCase();
+    if (limpio.length < 2) return false;
+    const dv   = limpio.slice(-1);
+    const nums = limpio.slice(0, -1);
+    if (!/^\d+$/.test(nums)) return false;
+    let suma = 0, mul = 2;
+    for (let i = nums.length - 1; i >= 0; i--) {
+      suma += parseInt(nums[i]) * mul;
+      mul = mul === 7 ? 2 : mul + 1;
+    }
+    const dvEsp  = 11 - (suma % 11);
+    const dvCalc = dvEsp === 11 ? '0' : dvEsp === 10 ? 'K' : String(dvEsp);
+    return dv === dvCalc;
+  } catch (_) { return false; }
+}
+
+// Normaliza el RUT para guardar: solo dígitos + DV sin puntos ni guión
+function normalizarRut(rut) {
+  return String(rut).replace(/[.\s]/g, '').toUpperCase();
+}
+
+/* ════════════════════════════════════════════════════════
+   FLOW: INGRESO
+═════════════════════════════════════════════════════════ */
+async function ingresar() {
+  const nombre = document.getElementById('inp-nombre').value.trim();
+  const rut    = document.getElementById('inp-rut').value.trim();
+  const codigo = document.getElementById('inp-codigo').value.trim().toUpperCase();
+
+  // Validaciones
+  if (!nombre) { toast('Escribe tu nombre completo', 'error'); return; }
+  if (!rut)    { toast('Ingresa tu RUT', 'error'); return; }
+  if (!validarRut(rut)) {
+    toast('El RUT ingresado no es válido. Verifica el dígito verificador.', 'error');
+    document.getElementById('inp-rut').focus();
+    return;
+  }
+  if (!codigo) { toast('Ingresa el código del control', 'error'); return; }
+
+  S.nombre        = nombre;
+  S.rut           = normalizarRut(rut);
+  S.rutFormateado = rut;
+  S.codigo        = codigo;
+
+  try {
+    const ctrl = await apiGet('getControl', { codigo });
+    S.control = ctrl;
+
+    // Update espera info
+    document.getElementById('espera-nombre').textContent  = nombre;
+    document.getElementById('espera-rut').textContent     = rut;
+    document.getElementById('espera-control').textContent = `Control: ${ctrl.nombre}`;
+
+    if (ctrl.estado === 'activo') {
+      await iniciarControl();
+    } else {
+      showScreen('screen-espera');
+      iniciarPoll();
+    }
+  } catch (e) {
+    toast(e.message || 'No se encontró el control. Verifica el código.', 'error');
+  }
+}
+
+function iniciarPoll() {
+  let dots = 0;
+  S.pollInterval = setInterval(async () => {
+    dots = (dots + 1) % 4;
+    document.getElementById('espera-pulse').textContent = 'Verificando' + '.'.repeat(dots + 1);
+    try {
+      const ctrl = await apiGet('getControl', { codigo: S.codigo });
+      if (ctrl.estado === 'activo') {
+        clearInterval(S.pollInterval);
+        S.control = ctrl;
+        await iniciarControl();
+      }
+    } catch (e) { /* sigue esperando */ }
+  }, 5000);
+}
+
+/* ════════════════════════════════════════════════════════
+   FLOW: INICIO CONTROL
+═════════════════════════════════════════════════════════ */
+async function iniciarControl() {
+  try {
+    const ejercicios = await apiGet('getEjercicios', { controlId: S.control.id });
+    S.ejercicios = ejercicios;
+    S.respuestas = ejercicios.map(() => ({ respuesta: '' }));
+    S.idx        = 0;
+    S.relSecs    = 0;
+    S.startTime  = Date.now();
+
+    prepararUI();
+    showScreen('screen-ejercicio');
+    renderEjercicio(0);
+    iniciarTimers();
+  } catch (e) {
+    toast('Error al cargar los ejercicios: ' + e.message, 'error');
+  }
+}
+
+function prepararUI() {
+  const n = S.ejercicios.length;
+  document.getElementById('ej-total-num').textContent = n;
+
+  // Dots
+  const wrap = document.getElementById('dots-wrap');
+  wrap.innerHTML = S.ejercicios.map((_, i) => `<div class="dot" id="dot-${i}"></div>`).join('');
+
+  // Timer mode
+  const tipo = S.control.tiempo_tipo || 'libre';
+  if (tipo === 'global') {
+    S.globalSecsLeft = (S.control.tiempo_valor || 20) * 60;
+    document.getElementById('global-bar').style.display = 'block';
+    document.getElementById('rel-timer').style.display  = 'none';
+  } else if (tipo === 'por_pregunta') {
+    document.getElementById('perq-timer-wrap').style.display = 'flex';
+    document.getElementById('rel-timer').style.display       = 'none';
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   RENDER EXERCISE
+═════════════════════════════════════════════════════════ */
+function renderEjercicio(idx) {
+  S.idx = idx;
+  const ej   = S.ejercicios[idx];
+  const resp = S.respuestas[idx];
+  const n    = S.ejercicios.length;
+
+  document.getElementById('ej-current-num').textContent = idx + 1;
+  document.getElementById('ej-num-label').textContent   = `Ejercicio ${idx + 1}`;
+
+  const answered = S.respuestas.filter(r => r.respuesta !== '').length;
+  const pct      = Math.round((answered / n) * 100);
+  document.getElementById('ej-prog-fill').style.width    = pct + '%';
+  document.getElementById('ej-answered-label').textContent =
+    `${answered} respondido${answered !== 1 ? 's' : ''}`;
+
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.className = 'dot' +
+      (S.respuestas[i].respuesta !== '' ? ' answered' : '') +
+      (i === idx ? ' current' : '');
+  });
+
+  const tagsEl = document.getElementById('ej-tags');
+  tagsEl.innerHTML = '';
+  if (ej.operacion) tagsEl.innerHTML += `<span class="badge badge-primary">${opLabel(ej.operacion)}</span>`;
+  if (ej.conjunto)  tagsEl.innerHTML += `<span class="badge badge-accent">${conjLabel(ej.conjunto)}</span>`;
+
+  renderMath(document.getElementById('math-display'), ej.latex || '?');
+
+  const isFrac = ej.conjunto === 'Q' && !ej.is_manual;
+  document.getElementById('answer-normal').style.display = isFrac ? 'none' : 'block';
+  const fracEl = document.getElementById('answer-frac');
+  isFrac ? fracEl.classList.add('visible') : fracEl.classList.remove('visible');
+  document.getElementById('answer-hint').textContent =
+    isFrac ? 'Escribe numerador y denominador por separado' : '';
+
+  if (isFrac) {
+    const parts = (resp.respuesta || '').split('/');
+    document.getElementById('frac-num').value = parts[0] || '';
+    document.getElementById('frac-den').value = parts[1] || '';
+  } else {
+    document.getElementById('answer-main').value = resp.respuesta || '';
+  }
+
+  document.getElementById('btn-prev').disabled = idx === 0;
+  const isLast = idx === n - 1;
+  document.getElementById('btn-next').style.display   = isLast ? 'none'        : 'inline-flex';
+  document.getElementById('btn-finish').style.display = isLast ? 'inline-flex' : 'none';
+
+  if (S.control.tiempo_tipo === 'por_pregunta') resetPerQ();
+
+  setTimeout(() => {
+    const el = isFrac
+      ? document.getElementById('frac-num')
+      : document.getElementById('answer-main');
+    el && el.focus();
+  }, 80);
+}
+
+/* ════════════════════════════════════════════════════════
+   SAVE / NAVIGATE
+═════════════════════════════════════════════════════════ */
+function guardarActual() {
+  const ej     = S.ejercicios[S.idx];
+  const isFrac = ej.conjunto === 'Q' && !ej.is_manual;
+  let val = '';
+  if (isFrac) {
+    const n = document.getElementById('frac-num').value.trim();
+    const d = document.getElementById('frac-den').value.trim();
+    val = (n !== '' && d !== '') ? `${n}/${d}` : '';
+  } else {
+    val = document.getElementById('answer-main').value.trim();
+  }
+  S.respuestas[S.idx].respuesta = val;
+}
+
+function navegarEj(dir) {
+  guardarActual();
+  const next = S.idx + dir;
+  if (next >= 0 && next < S.ejercicios.length) renderEjercicio(next);
+}
+
+function onAnswerKey(e) {
+  if (e.key === 'Enter') {
+    const isLast = S.idx === S.ejercicios.length - 1;
+    if (isLast) confirmarFin();
+    else navegarEj(1);
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   TIMERS
+═════════════════════════════════════════════════════════ */
+function iniciarTimers() {
+  S.relInterval = setInterval(() => {
+    S.relSecs++;
+    document.getElementById('rel-timer').textContent = fmtTime(S.relSecs);
+  }, 1000);
+
+  if (S.control.tiempo_tipo === 'global') {
+    const total = S.globalSecsLeft;
+    S.globalInterval = setInterval(() => {
+      S.globalSecsLeft--;
+      const pct  = Math.max(0, (S.globalSecsLeft / total) * 100);
+      const fill = document.getElementById('global-bar-fill');
+      fill.style.width = pct + '%';
+      fill.classList.toggle('urgent', S.globalSecsLeft <= 60);
+      document.getElementById('global-timer-text').textContent = fmtTime(S.globalSecsLeft);
+      if (S.globalSecsLeft <= 0) { clearInterval(S.globalInterval); finalizarControl(true); }
+    }, 1000);
+  }
+}
+
+function resetPerQ() {
+  clearInterval(S.perqInterval);
+  S.perqSecsLeft = S.control.tiempo_valor || 30;
+  const total  = S.perqSecsLeft;
+  const circ   = 157.08;
+  const circle = document.getElementById('perq-circle');
+  document.getElementById('perq-secs').textContent = S.perqSecsLeft;
+  circle.setAttribute('stroke-dashoffset', '0');
+  circle.classList.remove('urgent');
+
+  S.perqInterval = setInterval(() => {
+    S.perqSecsLeft--;
+    circle.setAttribute('stroke-dashoffset', circ * (1 - S.perqSecsLeft / total));
+    document.getElementById('perq-secs').textContent = S.perqSecsLeft;
+    if (S.perqSecsLeft <= 5) circle.classList.add('urgent');
+    if (S.perqSecsLeft <= 0) {
+      clearInterval(S.perqInterval);
+      if (S.idx < S.ejercicios.length - 1) navegarEj(1);
+      else finalizarControl(true);
+    }
+  }, 1000);
+}
+
+/* ════════════════════════════════════════════════════════
+   FINISH
+═════════════════════════════════════════════════════════ */
+function confirmarFin() {
+  guardarActual();
+  const pending = S.respuestas.filter(r => r.respuesta === '').length;
+  document.getElementById('pending-count').textContent = pending;
+  abrirModal('modal-fin');
+}
+
+async function finalizarControl(auto = false) {
+  cerrarModal('modal-fin');
+  if (!auto) guardarActual();
+
+  clearInterval(S.relInterval);
+  clearInterval(S.globalInterval);
+  clearInterval(S.perqInterval);
+
+  const payload = S.ejercicios.map((ej, i) => {
+    const resp = S.respuestas[i].respuesta;
+    return {
+      control_id:    S.control.id,
+      rut:           S.rut,               // ← v2.0: incluir RUT
+      estudiante:    S.nombre,
+      ejercicio_num: i + 1,
+      latex:         ej.latex || '',
+      operacion:     ej.operacion || '',
+      conjunto:      ej.conjunto  || '',
+      respuesta:     resp,
+      es_correcta:   validar(resp, ej),
+      tiempo_usado:  S.relSecs
+    };
+  });
+
+  mostrarResumen(payload);
+
+  try {
+    await apiPost({ action: 'saveRespuestas', respuestas: payload });
+    document.getElementById('saved-note').textContent = '✓ Respuestas guardadas correctamente';
+  } catch (e) {
+    document.getElementById('saved-note').textContent =
+      '⚠ No se pudo guardar online. Muestra esta pantalla a tu docente.';
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   VALIDATION
+═════════════════════════════════════════════════════════ */
+function validar(respuesta, ej) {
+  if (!respuesta || respuesta.trim() === '') return false;
+  const correcta = String(ej.respuesta_correcta || '').trim();
+  if (!correcta) return null;
+  const dada = respuesta.trim().replace(',', '.');
+  if (correcta.includes('/') || dada.includes('/')) {
+    return normFrac(dada) === normFrac(correcta);
+  }
+  try {
+    return Math.abs(parseFloat(dada) - parseFloat(correcta)) < 0.001;
+  } catch {
+    return dada.toLowerCase() === correcta.toLowerCase();
+  }
+}
+
+function normFrac(str) {
+  const parts = str.split('/');
+  if (parts.length !== 2) return str.trim();
+  let n = parseInt(parts[0]), d = parseInt(parts[1]);
+  if (isNaN(n) || isNaN(d) || d === 0) return str.trim();
+  if (d < 0) { n = -n; d = -d; }
+  const g = gcd(Math.abs(n), Math.abs(d));
+  return `${n / g}/${d / g}`;
+}
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+/* ════════════════════════════════════════════════════════
+   SUMMARY
+═════════════════════════════════════════════════════════ */
+function mostrarResumen(payload) {
+  const total     = payload.length;
+  const correctas = payload.filter(p => p.es_correcta === true).length;
+  const pct       = Math.round((correctas / total) * 100);
+
+  const pctEl = document.getElementById('res-pct');
+  pctEl.textContent = pct + '%';
+  pctEl.className   = 'score-pct ' +
+    (pct >= 70 ? 'grade-a' : pct >= 40 ? 'grade-b' : 'grade-c');
+
+  setTimeout(() => document.getElementById('res-bar').style.width = pct + '%', 50);
+
+  document.getElementById('res-correctas').textContent = `${correctas}/${total}`;
+  document.getElementById('res-tiempo').textContent    = fmtTime(S.relSecs);
+
+  const itemsEl = document.getElementById('res-items');
+  itemsEl.innerHTML = payload.map((p, i) => {
+    const st   = p.es_correcta === null ? 'skip' : p.es_correcta ? 'ok' : 'err';
+    const icon = { ok:'✓', err:'✗', skip:'?' }[st];
+    const ans  = p.respuesta
+      ? `<span class="res-answer font-mono">${p.respuesta}</span>`
+      : `<span class="res-answer" style="opacity:.35">sin resp.</span>`;
+    return `
+      <div class="res-item">
+        <div class="res-icon ${st}">${icon}</div>
+        <div class="res-ej-label">Ejercicio ${i + 1}</div>
+        ${ans}
+      </div>`;
+  }).join('');
+
+  showScreen('screen-resumen');
+}
+
+/* ════════════════════════════════════════════════════════
+   KEYBOARD SHORTCUTS
+═════════════════════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (document.querySelector('.screen.active')?.id !== 'screen-ejercicio') return;
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.key === 'ArrowRight') navegarEj(1);
+  if (e.key === 'ArrowLeft')  navegarEj(-1);
+});
+</script>
+</body>
+</html>

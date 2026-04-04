@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CalcuMental — Panel Docente</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+
+/* ══════════════════════════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════════════════════════ */
+body { background: var(--c-bg); overflow: hidden; }
+#app { display: none; height: 100vh; }
+#app.ready { display: flex; }
+
+/* ── Sidebar ────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  background: var(--c-primary-900);
+  display: flex; flex-direction: column;
+  height: 100vh; overflow-y: auto; overflow-x: hidden;
+}
+.sidebar-logo {
+  padding: 1.4rem 1.2rem 1.1rem;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.07); flex-shrink: 0;
+}
+.sidebar-logo-icon {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--c-primary-500), var(--c-accent));
+  display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+}
+.sidebar-logo-text { font-size: .98rem; font-weight: 700; color: #fff; letter-spacing: -.01em; }
+.sidebar-logo-sub  { font-size: .68rem; color: var(--c-primary-300); margin-top: 1px; }
+
+.sidebar-section {
+  padding: .8rem 1.1rem .3rem;
+  font-size: .65rem; font-weight: 700; color: var(--c-primary-400);
+  text-transform: uppercase; letter-spacing: .1em;
+}
+.sidebar-nav { padding: .3rem .6rem; display: flex; flex-direction: column; gap: 1px; }
+.nav-item {
+  display: flex; align-items: center; gap: 9px; padding: 9px 12px;
+  border-radius: var(--radius-md); cursor: pointer;
+  font-size: .86rem; font-weight: 500; color: rgba(255,255,255,.52);
+  transition: background var(--t-fast), color var(--t-fast); user-select: none;
+}
+.nav-item:hover  { background: rgba(255,255,255,.07); color: rgba(255,255,255,.85); }
+.nav-item.active { background: rgba(255,255,255,.12); color: #fff; font-weight: 600; }
+.nav-icon  { width: 20px; text-align: center; font-size: .95rem; flex-shrink: 0; }
+.nav-label { flex: 1; }
+.nav-badge {
+  background: var(--c-accent); color: #fff;
+  font-size: .65rem; font-weight: 700; padding: 2px 7px;
+  border-radius: var(--radius-full); line-height: 1.4;
+}
+.sidebar-footer {
+  margin-top: auto; padding: .9rem .8rem;
+  border-top: 1px solid rgba(255,255,255,.07); flex-shrink: 0;
+}
+.sidebar-user { display: flex; align-items: center; gap: 9px; }
+.sidebar-avatar {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(255,255,255,.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .78rem; font-weight: 700; color: #fff;
+}
+.sidebar-name { font-size: .82rem; font-weight: 600; color: #fff; }
+.sidebar-role { font-size: .68rem; color: var(--c-primary-300); }
+.sidebar-logout {
+  margin-left: auto; padding: 5px; border-radius: var(--radius-sm);
+  color: rgba(255,255,255,.3); font-size: .8rem;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.sidebar-logout:hover { color: var(--c-danger); background: rgba(220,38,38,.1); }
+
+/* ── Main column ────────────────────────────────────────── */
+.main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; }
+.main-header {
+  height: 60px; flex-shrink: 0;
+  background: var(--c-surface); border-bottom: 1px solid var(--c-border);
+  padding: 0 1.75rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+.main-header-left h2 { font-size: 1rem; font-weight: 700; line-height: 1.2; }
+.main-header-left p  { font-size: .75rem; color: var(--c-text-3); margin: 0; }
+.main-header-right   { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+.main-body { flex: 1; overflow-y: auto; padding: 1.75rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* ── Panel system ───────────────────────────────────────── */
+.panel { display: none; flex-direction: column; gap: 1.5rem; animation: fadeUp .3s ease; }
+.panel.active { display: flex; }
+.panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.panel-header h2 { font-size: 1.3rem; margin-bottom: .15rem; }
+.panel-header p  { color: var(--c-text-3); font-size: .84rem; margin: 0; }
+
+/* ══════════════════════════════════════════════════════════
+   PANEL: DASHBOARD
+═══════════════════════════════════════════════════════════ */
+.active-ctrl-list  { display: flex; flex-direction: column; gap: .6rem; }
+.active-ctrl-card  {
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg); padding: .9rem 1.1rem;
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  border-left: 5px solid var(--c-primary-400);
+}
+.ac-info { flex: 1; min-width: 120px; }
+.ac-name { font-weight: 600; font-size: .92rem; }
+.ac-meta { font-size: .76rem; color: var(--c-text-3); margin-top: 2px; }
+.ac-stat .val { font-size: 1.4rem; font-weight: 700; color: var(--c-primary-600); line-height: 1; }
+.ac-stat .lbl { font-size: .68rem; color: var(--c-text-3); text-transform: uppercase; letter-spacing: .04em; }
+
+/* ══════════════════════════════════════════════════════════
+   PANEL: CURSOS
+═══════════════════════════════════════════════════════════ */
+.cursos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .85rem; }
+.curso-card {
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg); padding: 1.1rem 1.2rem;
+  display: flex; flex-direction: column; gap: .5rem;
+  position: relative; overflow: hidden;
+  transition: box-shadow var(--t-base), transform var(--t-base);
+}
+.curso-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.curso-stripe { position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.curso-name   { font-weight: 700; font-size: .95rem; margin-top: .3rem; }
+.curso-desc   { font-size: .78rem; color: var(--c-text-3); line-height: 1.4; }
+.curso-stats  { display: flex; gap: .75rem; margin-top: .2rem; }
+.curso-stat   { font-size: .76rem; color: var(--c-text-3); }
+.curso-stat strong { color: var(--c-text-2); font-weight: 600; }
+.curso-actions { display: flex; gap: .4rem; margin-top: .4rem; flex-wrap: wrap; }
+
+/* ══════════════════════════════════════════════════════════
+   PANEL: CONTROLES
+═══════════════════════════════════════════════════════════ */
+.ctrl-filters { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+.ctrl-filters .form-select { width: auto; min-width: 150px; padding: 7px 11px; font-size: .84rem; }
+.ctrl-list { display: flex; flex-direction: column; gap: .6rem; }
+.ctrl-card {
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg); padding: 1rem 1.2rem;
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  border-left: 5px solid var(--c-border);
+  transition: box-shadow var(--t-base);
+}
+.ctrl-card:hover { box-shadow: var(--shadow-sm); }
+.ctrl-info { flex: 1; min-width: 180px; }
+.ctrl-name { font-weight: 600; font-size: .92rem; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.ctrl-meta { font-size: .76rem; color: var(--c-text-3); margin-top: 3px; display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.ctrl-code { font-family: var(--font-mono); font-size: .72rem; background: var(--c-bg-2); padding: 2px 7px; border-radius: var(--radius-sm); color: var(--c-text-2); letter-spacing: .05em; }
+.ctrl-actions { display: flex; gap: .4rem; align-items: center; }
+
+/* ══════════════════════════════════════════════════════════
+   PANEL: ÚLTIMOS RESULTADOS
+═══════════════════════════════════════════════════════════ */
+.ult-filters {
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg); padding: 1.1rem 1.3rem;
+  display: flex; gap: .75rem; flex-wrap: wrap; align-items: flex-end;
+}
+.ult-filters .form-group { margin-bottom: 0; min-width: 160px; flex: 1; }
+.ult-filters .form-label { font-size: .78rem; }
+
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.charts-grid .card-full { grid-column: 1 / -1; }
+@media (max-width: 860px) { .charts-grid { grid-template-columns: 1fr; } }
+
+.view-toggle { display: flex; border: 1.5px solid var(--c-border-2); border-radius: var(--radius-md); overflow: hidden; }
+.view-btn {
+  padding: 7px 14px; font-size: .82rem; font-weight: 500;
+  color: var(--c-text-3); background: var(--c-surface);
+  border: none; cursor: pointer; transition: background var(--t-fast), color var(--t-fast);
+}
+.view-btn.active { background: var(--c-primary-100); color: var(--c-primary-700); font-weight: 600; }
+
+/* Export actions bar */
+.export-bar {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  padding: .75rem 1rem;
+  background: var(--c-bg); border-radius: var(--radius-md);
+  border: 1px solid var(--c-border);
+}
+.export-bar-label { font-size: .8rem; font-weight: 600; color: var(--c-text-3); flex: 1; }
+
+/* ══════════════════════════════════════════════════════════
+   PANEL: RESULTADOS GENERALES
+═══════════════════════════════════════════════════════════ */
+.rg-filters {
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg); padding: 1.2rem 1.3rem;
+}
+.rg-filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; align-items: end; }
+.rg-filters .form-group { margin-bottom: 0; }
+.rg-filters .form-label { font-size: .78rem; }
+
+/* ══════════════════════════════════════════════════════════
+   PANEL: PROGRESIÓN
+═══════════════════════════════════════════════════════════ */
+.prog-controls {
+  display: flex; gap: .75rem; flex-wrap: wrap; align-items: flex-end;
+}
+.prog-controls .form-group { margin-bottom: 0; min-width: 180px; flex: 1; }
+.prog-controls .form-label { font-size: .78rem; }
+
+.slider-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 200px; flex: 1; }
+.slider-label-row { display: flex; justify-content: space-between; font-size: .78rem; font-weight: 600; color: var(--c-text-2); }
+input[type=range] { width: 100%; accent-color: var(--c-primary-600); }
+
+/* ══════════════════════════════════════════════════════════
+   MODAL: CONTROL — Constructor visual
+═══════════════════════════════════════════════════════════ */
+.latex-preview-box {
+  min-height: 58px; padding: .75rem 1rem;
+  border: 1.5px solid var(--c-border); border-radius: var(--radius-md);
+  background: var(--c-bg); display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+}
+.ej-manual-list { display: flex; flex-direction: column; gap: .4rem; max-height: 220px; overflow-y: auto; }
+.ej-manual-item {
+  display: flex; align-items: center; gap: 8px; padding: .55rem .8rem;
+  background: var(--c-bg); border-radius: var(--radius-md); font-size: .84rem;
+}
+.ej-manual-num   { color: var(--c-text-3); min-width: 22px; font-weight: 600; }
+.ej-manual-latex { flex: 1; overflow: hidden; }
+.ej-manual-ans   { font-family: var(--font-mono); font-size: .75rem; color: var(--c-text-3); }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     LOGIN OVERLAY
+═════════════════════════════════════════════════════════ -->
+<div class="modal-overlay open" id="login-overlay">
+  <div class="modal modal-sm" style="text-align:center;">
+    <div style="font-size:2.4rem;margin-bottom:.4rem;">🧮</div>
+    <h2 style="margin-bottom:.2rem;font-family:var(--font-display);">CalcuMental</h2>
+    <p style="margin-bottom:1.5rem;font-size:.86rem;color:var(--c-text-3);">Panel docente — acceso restringido</p>
+    <div class="form-group" style="text-align:left;">
+      <label class="form-label">Contraseña</label>
+      <input type="password" id="login-pwd" class="form-input"
+        placeholder="••••••••" onkeydown="if(event.key==='Enter') login()">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="login()" style="margin-top:.5rem;">Ingresar →</button>
+    <p id="login-err" style="color:var(--c-danger);font-size:.8rem;margin-top:.6rem;display:none;">Contraseña incorrecta</p>
+    <a href="index.html" style="display:block;margin-top:1rem;font-size:.78rem;color:var(--c-text-3);">← Volver al inicio</a>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MAIN APP
+═════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🧮</div>
+      <div>
+        <div class="sidebar-logo-text">CalcuMental</div>
+        <div class="sidebar-logo-sub">Panel Docente v2.0</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="margin-top:.4rem;">Configuración</div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-panel="dashboard" onclick="mostrarPanel('dashboard')">
+        <span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span>
+      </div>
+      <div class="nav-item" data-panel="cursos" onclick="mostrarPanel('cursos')">
+        <span class="nav-icon">📚</span><span class="nav-label">Cursos</span>
+      </div>
+      <div class="nav-item" data-panel="controles" onclick="mostrarPanel('controles')">
+        <span class="nav-icon">📋</span><span class="nav-label">Controles</span>
+        <span class="nav-badge" id="badge-activos" style="display:none">0</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-section">Análisis</div>
+    <nav class="sidebar-nav">
+      <div class="nav-item" data-panel="ult-resultados" onclick="mostrarPanel('ult-resultados')">
+        <span class="nav-icon">📊</span><span class="nav-label">Últimos resultados</span>
+      </div>
+      <div class="nav-item" data-panel="res-generales" onclick="mostrarPanel('res-generales')">
+        <span class="nav-icon">📈</span><span class="nav-label">Resultados generales</span>
+      </div>
+      <div class="nav-item" data-panel="progresion" onclick="mostrarPanel('progresion')">
+        <span class="nav-icon">🔥</span><span class="nav-label">Progresión</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">D</div>
+        <div>
+          <div class="sidebar-name">Docente</div>
+          <div class="sidebar-role">Administrador</div>
+        </div>
+        <button class="sidebar-logout" onclick="logout()" title="Cerrar sesión">⏏</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN COLUMN -->
+  <div class="main-col">
+    <header class="main-header">
+      <div class="main-header-left">
+        <h2 id="hdr-title">Dashboard</h2>
+        <p id="hdr-sub">Vista general del sistema</p>
+      </div>
+      <div class="main-header-right" id="hdr-actions"></div>
+    </header>
+
+    <div class="main-body">
+
+      <!-- ══════════════════════════════════════════════════
+           PANEL: DASHBOARD
+      ══════════════════════════════════════════════════ -->
+      <div id="panel-dashboard" class="panel active">
+        <div class="metrics-grid" id="dash-metrics">
+          <div class="metric-card m-primary">
+            <div class="metric-label">Controles activos</div>
+            <div class="metric-value" id="d-activos">—</div>
+            <div class="metric-sub">En este momento</div>
+          </div>
+          <div class="metric-card m-success">
+            <div class="metric-label">Controles rendidos hoy</div>
+            <div class="metric-value" id="d-rendidos">—</div>
+            <div class="metric-sub">Sesiones únicas</div>
+          </div>
+          <div class="metric-card m-accent">
+            <div class="metric-label">Promedio general hoy</div>
+            <div class="metric-value" id="d-promedio">—</div>
+            <div class="metric-sub">% correcto</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Estudiantes únicos hoy</div>
+            <div class="metric-value" id="d-estudiantes">—</div>
+            <div class="metric-sub">Con actividad</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Controles activos ahora</div></div>
+            <div class="live-indicator"><div class="live-dot"></div> En vivo</div>
+          </div>
+          <div id="dash-activos-list">
+            <div class="loading-wrap"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           PANEL: CURSOS
+      ══════════════════════════════════════════════════ -->
+      <div id="panel-cursos" class="panel">
+        <div class="panel-header">
+          <div><h2>Cursos</h2><p>Gestiona los cursos y sus estudiantes</p></div>
+          <div style="display:flex;gap:.5rem">
+            <button class="btn btn-outline btn-sm" onclick="abrirInconsistencias()">⚠ Revisar inconsistencias</button>
+            <button class="btn btn-primary btn-sm" onclick="abrirModalCurso()">+ Nuevo curso</button>
+          </div>
+        </div>
+        <div class="cursos-grid" id="cursos-grid">
+          <div class="loading-wrap" style="grid-column:1/-1"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           PANEL: CONTROLES
+      ══════════════════════════════════════════════════ -->
+      <div id="panel-controles" class="panel">
+        <div class="panel-header">
+          <div><h2>Controles</h2><p>Crea, configura y activa evaluaciones de cálculo mental</p></div>
+          <button class="btn btn-primary btn-sm" onclick="abrirModalControl()">+ Nuevo control</button>
+        </div>
+        <div class="ctrl-filters">
+          <select class="form-select" id="flt-estado" onchange="renderControles()">
+            <option value="">Todos los estados</option>
+            <option value="activo">Activos</option>
+            <option value="borrador">Borradores</option>
+            <option value="cerrado">Cerrados</option>
+          </select>
+          <select class="form-select" id="flt-curso" onchange="renderControles()">
+            <option value="">Todos los cursos</option>
+          </select>
+        </div>
+        <div class="ctrl-list" id="ctrl-list">
+          <div class="loading-wrap"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           PANEL: ÚLTIMOS RESULTADOS
+      ══════════════════════════════════════════════════ -->
+      <div id="panel-ult-resultados" class="panel">
+        <div class="panel-header">
+          <div><h2>Últimos resultados</h2><p>Resultados detallados por control y curso, con notas</p></div>
+          <div class="view-toggle">
+            <button class="view-btn active" id="vbtn-graficos" onclick="setView('graficos')">📊 Gráficos</button>
+            <button class="view-btn" id="vbtn-tabla" onclick="setView('tabla')">📋 Tabla</button>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="ult-filters">
+          <div class="form-group">
+            <label class="form-label">Curso</label>
+            <select class="form-select" id="uf-curso" onchange="onUltCursoChange()">
+              <option value="">Selecciona un curso…</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Control</label>
+            <select class="form-select" id="uf-control" onchange="cargarUltResultados()">
+              <option value="">— elige curso primero —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Operación</label>
+            <select class="form-select" id="uf-op">
+              <option value="">Todas</option>
+              <option value="suma">Suma</option><option value="resta">Resta</option>
+              <option value="mult">Multiplicación</option><option value="div">División</option>
+              <option value="pot">Potencia</option><option value="log">Logaritmo</option>
+              <option value="raiz">Raíz</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Conjunto</label>
+            <select class="form-select" id="uf-conj">
+              <option value="">Todos</option>
+              <option value="N">ℕ Naturales</option>
+              <option value="Z">ℤ Enteros</option>
+              <option value="Q">ℚ Racionales</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" style="align-self:flex-end" onclick="cargarUltResultados()">Buscar</button>
+        </div>
+
+        <!-- Escala de notas -->
+        <div class="escala-card" id="escala-wrap" style="display:none">
+          <div class="escala-title">⚖ Escala de notas</div>
+          <div class="escala-grid">
+            <div class="escala-field">
+              <label>Nota mínima</label>
+              <input type="number" id="esc-min"  value="1.0" min="1" max="4"  step="0.1" oninput="actualizarEscala()">
+            </div>
+            <div class="escala-field">
+              <label>Nota máxima</label>
+              <input type="number" id="esc-max"  value="7.0" min="5" max="10" step="0.1" oninput="actualizarEscala()">
+            </div>
+            <div class="escala-field">
+              <label>Nota aprobación</label>
+              <input type="number" id="esc-apro" value="4.0" min="1" max="7"  step="0.1" oninput="actualizarEscala()">
+            </div>
+            <div class="escala-field">
+              <label>% para aprobar</label>
+              <input type="number" id="esc-pct"  value="60"  min="10" max="100" step="1" oninput="actualizarEscala()">
+            </div>
+          </div>
+          <div class="escala-preview" id="escala-preview">
+            Configura la escala para ver el cálculo de notas
+          </div>
+        </div>
+
+        <!-- Métricas -->
+        <div class="metrics-grid" id="ult-metrics" style="display:none"></div>
+
+        <!-- Gráficos -->
+        <div id="view-graficos-ult">
+          <div class="charts-grid">
+            <div class="card">
+              <div class="card-header"><div class="card-title">% Correcto por operación</div></div>
+              <div class="chart-wrap"><canvas id="ch-ult-ops" height="220"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">% Correcto por conjunto</div></div>
+              <div class="chart-wrap"><canvas id="ch-ult-conj" height="220"></canvas></div>
+            </div>
+            <div class="card card-full">
+              <div class="card-header">
+                <div class="card-title">Distribución de puntajes</div>
+                <div class="card-subtitle">% correcto por estudiante</div>
+              </div>
+              <div class="chart-wrap"><canvas id="ch-ult-dist" height="160"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla con notas -->
+        <div id="view-tabla-ult" style="display:none">
+          <div class="card" style="padding:0">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Estudiante</th><th>RUT</th><th>Curso</th><th>Control</th>
+                    <th>Correctas</th><th>Total</th><th>%</th><th>Nota</th><th>Tiempo</th>
+                  </tr>
+                </thead>
+                <tbody id="ult-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de exportación -->
+        <div class="export-bar" id="ult-export-bar" style="display:none">
+          <span class="export-bar-label">Exportar resultados</span>
+          <button class="btn btn-ghost btn-sm" onclick="exportarCSV('ult')">⬇ CSV / Excel</button>
+          <button class="btn btn-ghost btn-sm" onclick="copiarTabla('ult')">📋 Copiar tabla</button>
+          <button class="btn btn-ghost btn-sm" onclick="imprimirPanel('panel-ult-resultados')">🖨 Imprimir</button>
+        </div>
+
+        <div id="ult-empty" class="empty-state" style="display:none">
+          <div class="empty-icon">📊</div>
+          <h4>Sin datos aún</h4>
+          <p>Selecciona un curso para ver el último control automáticamente</p>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           PANEL: RESULTADOS GENERALES
+      ══════════════════════════════════════════════════ -->
+      <div id="panel-res-generales" class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Resultados generales</h2>
+            <p>Vista agregada para análisis de departamento — selección múltiple de cursos y controles</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="imprimirPanel('panel-res-generales')">🖨 Imprimir informe</button>
+        </div>
+
+        <!-- Filtros multi-select -->
+        <div class="rg-filters">
+          <div class="rg-filters-grid">
+            <div class="form-group">
+              <label class="form-label">Cursos</label>
+              <div class="multiselect-wrap" id="ms-cursos-wrap">
+                <div class="multiselect-display" id="ms-cursos-display" onclick="toggleMultiselect('ms-cursos')">
+                  <span class="ms-placeholder">Todos los cursos</span>
+                </div>
+                <div class="multiselect-dropdown" id="ms-cursos-drop"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Controles</label>
+              <div class="multiselect-wrap" id="ms-ctrls-wrap">
+                <div class="multiselect-display" id="ms-ctrls-display" onclick="toggleMultiselect('ms-ctrls')">
+                  <span class="ms-placeholder">Todos los controles</span>
+                </div>
+                <div class="multiselect-dropdown" id="ms-ctrls-drop"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Operaciones</label>
+              <div class="multiselect-wrap" id="ms-ops-wrap">
+                <div class="multiselect-display" id="ms-ops-display" onclick="toggleMultiselect('ms-ops')">
+                  <span class="ms-placeholder">Todas las operaciones</span>
+                </div>
+                <div class="multiselect-dropdown" id="ms-ops-drop"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Conjuntos</label>
+              <div class="multiselect-wrap" id="ms-conjs-wrap">
+                <div class="multiselect-display" id="ms-conjs-display" onclick="toggleMultiselect('ms-conjs')">
+                  <span class="ms-placeholder">Todos los conjuntos</span>
+                </div>
+                <div class="multiselect-dropdown" id="ms-conjs-drop"></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:.75rem;gap:.5rem">
+            <button class="btn btn-ghost btn-sm" onclick="limpiarFiltrosRG()">Limpiar filtros</button>
+            <button class="btn btn-primary btn-sm" onclick="cargarResultadosGenerales()">Analizar</button>
+          </div>
+        </div>
+
+        <!-- Métricas resumen -->
+        <div class="metrics-grid" id="rg-metrics" style="display:none"></div>
+
+        <!-- Gráficos -->
+        <div id="rg-charts" style="display:none">
+          <div class="charts-grid">
+            <div class="card">
+              <div class="card-header"><div class="card-title">% Correcto por operación</div></div>
+              <div class="chart-wrap"><canvas id="ch-rg-ops" height="220"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">% Correcto por conjunto</div></div>
+              <div class="chart-wrap"><canvas id="ch-rg-conj" height="220"></canvas></div>
+            </div>
+            <div class="card card-full">
+              <div class="card-header">
+                <div class="card-title">Comparación entre cursos</div>
+                <div class="card-subtitle">% promedio por curso</div>
+              </div>
+              <div class="chart-wrap"><canvas id="ch-rg-cursos" height="180"></canvas></div>
+            </div>
+            <div class="card card-full">
+              <div class="card-header">
+                <div class="card-title">Habilidades más débiles del establecimiento</div>
+                <div class="card-subtitle">Combinación operación × conjunto</div>
+              </div>
+              <div class="chart-wrap"><canvas id="ch-rg-debiles" height="180"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de exportación -->
+        <div class="export-bar" id="rg-export-bar" style="display:none">
+          <span class="export-bar-label">Exportar informe de departamento</span>
+          <button class="btn btn-ghost btn-sm" onclick="exportarCSV('rg')">⬇ CSV / Excel</button>
+          <button class="btn btn-ghost btn-sm" onclick="imprimirPanel('panel-res-generales')">🖨 Imprimir informe</button>
+        </div>
+
+        <div id="rg-empty" class="empty-state">
+          <div class="empty-icon">📈</div>
+          <h4>Selecciona los filtros y presiona Analizar</h4>
+          <p>Puedes combinar múltiples cursos, controles, operaciones y conjuntos</p>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           PANEL: PROGRESIÓN
+      ══════════════════════════════════════════════════ -->
+      <div id="panel-progresion" class="panel">
+        <div class="panel-header">
+          <div><h2>Progresión</h2><p>Evolución del desempeño en el tiempo</p></div>
+        </div>
+
+        <!-- Selector de modo -->
+        <div class="mode-tabs" id="prog-mode-tabs">
+          <div class="mode-tab active" id="mode-tab-curso" onclick="setProgMode('curso')">
+            <div class="mode-tab-icon">📚</div>
+            <div class="mode-tab-label">Por curso</div>
+          </div>
+          <div class="mode-tab" id="mode-tab-estudiante" onclick="setProgMode('estudiante')">
+            <div class="mode-tab-icon">👤</div>
+            <div class="mode-tab-label">Por estudiante</div>
+          </div>
+        </div>
+
+        <!-- Controles modo CURSO -->
+        <div id="prog-mode-curso">
+          <div class="prog-controls" style="margin-bottom:1.5rem">
+            <div class="form-group">
+              <label class="form-label">Curso</label>
+              <select class="form-select" id="pg-curso" onchange="onProgCursoChange()">
+                <option value="">Selecciona un curso</option>
+              </select>
+            </div>
+            <div class="slider-wrap">
+              <div class="slider-label-row">
+                <span>Controles a mostrar</span>
+                <span id="pg-slider-val" style="color:var(--c-primary-600)">Todos</span>
+              </div>
+              <input type="range" id="pg-slider" min="1" max="20" value="20"
+                oninput="onProgSlider(this.value)">
+            </div>
+            <div style="display:flex;gap:.5rem;align-self:flex-end;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" onclick="cargarProgresion()">Actualizar</button>
+              <button class="btn btn-ghost btn-sm" onclick="exportarProgresion('curso')">⬇ Exportar</button>
+            </div>
+          </div>
+
+          <!-- Sub-tabs de curso -->
+          <div class="tab-list" id="prog-curso-tabs">
+            <button class="tab-btn active" onclick="showProgTab('heatmap',this,'curso')">🟥 Mapa de calor</button>
+            <button class="tab-btn"        onclick="showProgTab('lineas',this,'curso')">📈 Líneas</button>
+            <button class="tab-btn"        onclick="showProgTab('riesgo',this,'curso')">⚠ En riesgo</button>
+          </div>
+
+          <div id="prog-tab-heatmap" class="tab-panel active">
+            <div class="card">
+              <div class="card-header">
+                <div><div class="card-title">Mapa de calor — Estudiantes × Habilidades</div>
+                <div class="card-subtitle" id="heatmap-info"></div></div>
+              </div>
+              <div class="heatmap-outer"><canvas id="heatmap-canvas"></canvas></div>
+              <div class="heatmap-legend">
+                <span>0%</span>
+                <div class="heatmap-gradient"></div>
+                <span>100%</span>
+                <span style="margin-left:auto">— = sin datos</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="prog-tab-lineas" class="tab-panel">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Progresión del curso en el tiempo</div>
+                <div class="card-subtitle">% correcto por control</div>
+              </div>
+              <div class="chart-wrap"><canvas id="ch-lines" height="260"></canvas></div>
+            </div>
+          </div>
+
+          <div id="prog-tab-riesgo" class="tab-panel">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Estudiantes en riesgo</div>
+                <div class="card-subtitle">Tendencia a la baja en los últimos 3 controles</div>
+              </div>
+              <div id="riesgo-list-wrap">
+                <div class="empty-state">
+                  <div class="empty-icon">✅</div>
+                  <h4>Sin estudiantes en riesgo</h4>
+                  <p>Carga los datos de un curso para analizar la progresión</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controles modo ESTUDIANTE -->
+        <div id="prog-mode-estudiante" style="display:none">
+          <div class="prog-controls" style="margin-bottom:1.5rem">
+            <div class="form-group">
+              <label class="form-label">Curso</label>
+              <select class="form-select" id="pg-est-curso" onchange="onProgEstCursoChange()">
+                <option value="">Selecciona un curso</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estudiante</label>
+              <select class="form-select" id="pg-est-selector" onchange="cargarProgresionEst()">
+                <option value="">— elige curso primero —</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:.5rem;align-self:flex-end;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="exportarProgresion('estudiante')">⬇ Exportar</button>
+            </div>
+          </div>
+
+          <!-- Sub-tabs de estudiante -->
+          <div class="tab-list" id="prog-est-tabs">
+            <button class="tab-btn active" onclick="showProgTab('perfil',this,'estudiante')">🎯 Perfil de habilidades</button>
+            <button class="tab-btn"        onclick="showProgTab('historial',this,'estudiante')">📅 Historial</button>
+          </div>
+
+          <div id="prog-tab-perfil" class="tab-panel active">
+            <div id="perfil-wrap">
+              <div class="empty-state">
+                <div class="empty-icon">👤</div>
+                <h4>Selecciona un estudiante</h4>
+                <p>Elige un curso y luego un estudiante para ver su perfil completo</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="prog-tab-historial" class="tab-panel">
+            <div id="historial-wrap">
+              <div class="empty-state">
+                <div class="empty-icon">📅</div>
+                <h4>Sin historial</h4>
+                <p>Selecciona un estudiante para ver su historial de controles</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- main-body -->
+  </div><!-- main-col -->
+</div><!-- app -->
+
+<!-- ════════════════════════════════════════════════════════
+     PANEL LATERAL: ESTUDIANTES DEL CURSO
+═════════════════════════════════════════════════════════ -->
+<div class="side-panel-overlay" id="side-estudiantes">
+  <div class="side-panel">
+    <div class="side-panel-header">
+      <div>
+        <div class="side-panel-title" id="side-curso-nombre">Estudiantes</div>
+        <div style="font-size:.76rem;color:var(--c-text-3)" id="side-curso-count"></div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-outline btn-xs" onclick="abrirModalEstudiante(null, sidePanel.cursoId)">+ Agregar</button>
+        <button class="modal-close" onclick="cerrarSidePanel()">✕</button>
+      </div>
+    </div>
+    <div class="side-panel-body">
+      <!-- Buscador -->
+      <div class="form-group" style="margin-bottom:.75rem">
+        <input type="text" class="form-input" id="est-buscar"
+          placeholder="Buscar por nombre o RUT…"
+          oninput="filtrarEstudiantes(this.value)" style="font-size:.84rem;padding:7px 11px">
+      </div>
+      <div id="est-lista"></div>
+    </div>
+    <div class="side-panel-footer">
+      <button class="btn btn-ghost btn-sm" onclick="exportarEstudiantes()">⬇ Exportar lista</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MODAL: NUEVO / EDITAR CURSO
+═════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-curso">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3 class="modal-title" id="mc-title">Nuevo curso</h3>
+      <button class="modal-close" onclick="cerrarModal('modal-curso')">✕</button>
+    </div>
+    <input type="hidden" id="mc-id">
+    <div class="form-group">
+      <label class="form-label">Nombre <span class="req">*</span></label>
+      <input type="text" id="mc-nombre" class="form-input" placeholder="Ej: 7° A — Matemáticas">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Color</label>
+      <div class="color-picker" id="mc-colors"></div>
+      <input type="hidden" id="mc-color" value="#4338ca">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descripción (opcional)</label>
+      <input type="text" id="mc-desc" class="form-input" placeholder="Descripción breve">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="cerrarModal('modal-curso')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="guardarCurso()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MODAL: NUEVO / EDITAR ESTUDIANTE
+═════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-estudiante">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3 class="modal-title" id="mest-title">Agregar estudiante</h3>
+      <button class="modal-close" onclick="cerrarModal('modal-estudiante')">✕</button>
+    </div>
+    <input type="hidden" id="mest-rut-original">
+    <div class="form-group">
+      <label class="form-label">RUT <span class="req">*</span></label>
+      <div class="rut-wrap">
+        <input type="text" id="mest-rut" class="form-input"
+          placeholder="12.345.678-9" maxlength="12"
+          oninput="onRutInputModal(this)" onblur="onRutBlurModal(this)">
+        <span class="rut-status" id="mest-rut-status"></span>
+      </div>
+      <span class="form-hint" id="mest-rut-hint">Identificador único del estudiante</span>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre <span class="req">*</span></label>
+        <input type="text" id="mest-nombre" class="form-input" placeholder="Nombre">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Apellido <span class="req">*</span></label>
+        <input type="text" id="mest-apellido" class="form-input" placeholder="Apellido">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Curso</label>
+      <select class="form-select" id="mest-curso"></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="cerrarModal('modal-estudiante')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="guardarEstudiante()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MODAL: INCONSISTENCIAS
+═════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-inconsistencias">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <h3 class="modal-title">Revisión de inconsistencias</h3>
+      <button class="modal-close" onclick="cerrarModal('modal-inconsistencias')">✕</button>
+    </div>
+    <p style="color:var(--c-text-3);font-size:.84rem;margin-bottom:1rem">
+      El sistema detecta automáticamente posibles errores en los datos de los estudiantes.
+      Revisa y corrígelos manualmente.
+    </p>
+    <div id="inconsistencias-lista">
+      <div class="loading-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="cerrarModal('modal-inconsistencias')">Cerrar</button>
+      <button class="btn btn-outline btn-sm" onclick="abrirInconsistencias()">🔄 Re-analizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MODAL: NUEVO / EDITAR CONTROL
+═════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-control">
+  <div class="modal modal-xxl">
+    <div class="modal-header">
+      <h3 class="modal-title" id="mctrl-title">Nuevo control</h3>
+      <button class="modal-close" onclick="cerrarModal('modal-control')">✕</button>
+    </div>
+    <input type="hidden" id="mctrl-id">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre <span class="req">*</span></label>
+        <input type="text" id="mctrl-nombre" class="form-input" placeholder="Ej: Control 1 — Suma y Resta">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Código de acceso</label>
+        <input type="text" id="mctrl-codigo" class="form-input font-mono"
+          placeholder="Auto-generado" style="text-transform:uppercase;letter-spacing:.1em">
+        <span class="form-hint">Los estudiantes usan este código para ingresar</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Cursos asignados <span class="req">*</span></label>
+      <div class="checkbox-group" id="mctrl-cursos"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Color identificador</label>
+      <div class="color-picker" id="mctrl-colors"></div>
+      <input type="hidden" id="mctrl-color" value="#4338ca">
+    </div>
+
+    <div class="divider"></div>
+    <h5 style="margin-bottom:.75rem;">Configuración de tiempo</h5>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Tipo de tiempo</label>
+        <select class="form-select" id="mctrl-tiempo-tipo" onchange="onTiempoTipoChange()">
+          <option value="global">Global — tiempo total del control</option>
+          <option value="por_pregunta">Por pregunta — segundos por ejercicio</option>
+          <option value="libre">Sin límite de tiempo</option>
+        </select>
+      </div>
+      <div class="form-group" id="mctrl-tiempo-val-wrap">
+        <label class="form-label" id="mctrl-tiempo-lbl">Duración (minutos)</label>
+        <input type="number" id="mctrl-tiempo-val" class="form-input" value="20" min="1" max="180">
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <h5 style="margin-bottom:.75rem;">Ejercicios</h5>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Cantidad de ejercicios</label>
+        <input type="number" id="mctrl-cantidad" class="form-input" value="10" min="1" max="60">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Modo</label>
+        <select class="form-select" id="mctrl-modo" onchange="onModoChange()">
+          <option value="auto">Automático (generados al azar)</option>
+          <option value="manual">Manual (tú los ingresas)</option>
+          <option value="mixto">Mixto (fijos + aleatorios)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- CONFIG AUTO -->
+    <div id="mctrl-auto-cfg">
+      <div class="form-group">
+        <label class="form-label">Operaciones a evaluar</label>
+        <div class="checkbox-group">
+          <label class="checkbox-pill"><input type="checkbox" class="op-chk" value="suma" checked> ＋ Suma</label>
+          <label class="checkbox-pill"><input type="checkbox" class="op-chk" value="resta"> − Resta</label>
+          <label class="checkbox-pill"><input type="checkbox" class="op-chk" value="mult"> × Multiplicación</label>
+          <label class="checkbox-pill"><input type="checkbox" class="op-chk" value="div"> ÷ División</label>
+          <label class="checkbox-pill"><input type="checkbox" class="op-chk" value="pot"> xⁿ Potencia</label>
+          <label class="checkbox-pill"><input type="checkbox" class="op-chk" value="log"> log Logaritmo</label>
+          <label class="checkbox-pill"><input type="checkbox" class="op-chk" value="raiz"> √ Raíz</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Conjuntos numéricos</label>
+        <div class="checkbox-group">
+          <label class="checkbox-pill"><input type="checkbox" class="conj-chk" value="N" checked> ℕ Naturales</label>
+          <label class="checkbox-pill"><input type="checkbox" class="conj-chk" value="Z"> ℤ Enteros</label>
+          <label class="checkbox-pill"><input type="checkbox" class="conj-chk" value="Q"> ℚ Racionales</label>
+        </div>
+      </div>
+
+      <!-- Parámetros por operación -->
+      <div class="form-group">
+        <label class="form-label">Parámetros por operación</label>
+        <span class="form-hint">Ajusta los rangos para controlar la dificultad. Haz clic en cada operación para expandir.</span>
+        <div class="params-accordion" id="params-accordion" style="margin-top:.5rem"></div>
+      </div>
+
+      <!-- Previsualización -->
+      <div class="form-group">
+        <label class="form-label">Previsualización</label>
+        <button class="btn btn-outline btn-sm" onclick="previsualizarEjercicios()" id="btn-preview">
+          👁 Generar vista previa (5 ejercicios)
+        </button>
+        <div class="preview-grid" id="preview-grid" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- CONFIG MANUAL -->
+    <div id="mctrl-manual-cfg" style="display:none">
+      <!-- Sub-tabs: constructor visual vs LaTeX -->
+      <div class="vb-tabs" id="ej-input-tabs" style="margin-bottom:1rem">
+        <div class="vb-tab active" onclick="setEjInputMode('visual',this)">🔧 Constructor visual</div>
+        <div class="vb-tab" onclick="setEjInputMode('latex',this)">{ } LaTeX avanzado</div>
+      </div>
+
+      <!-- MODO VISUAL -->
+      <div id="ej-mode-visual">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tipo de ejercicio</label>
+            <select class="form-select" id="vb-tipo" onchange="onVbTipoChange()">
+              <option value="basico">Operación básica (a ○ b)</option>
+              <option value="fraccion">Con fracciones</option>
+              <option value="potencia">Potencia (aⁿ)</option>
+              <option value="raiz">Raíz (ⁿ√a)</option>
+              <option value="logaritmo">Logaritmo (logₐb)</option>
+            </select>
+          </div>
+          <div class="form-group" id="vb-op-wrap">
+            <label class="form-label">Operación</label>
+            <select class="form-select" id="vb-op">
+              <option value="+">＋ Suma</option>
+              <option value="-">− Resta</option>
+              <option value="\times">× Multiplicación</option>
+              <option value="\div">÷ División</option>
+            </select>
+          </div>
+        </div>
+        <div id="vb-fields" style="margin-bottom:.75rem"></div>
+        <div class="latex-preview-box" id="vb-preview">
+          <span style="color:var(--c-text-3);font-size:.85rem">Vista previa del ejercicio…</span>
+        </div>
+        <div class="form-row" style="margin-top:.75rem">
+          <div class="form-group">
+            <label class="form-label">Respuesta correcta</label>
+            <input type="text" id="vb-resp" class="form-input font-mono" placeholder="Ej: 81 ó 3/4">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Operación (etiqueta)</label>
+            <select class="form-select" id="vb-op-label">
+              <option value="">Sin etiqueta</option>
+              <option value="suma">Suma</option><option value="resta">Resta</option>
+              <option value="mult">Multiplicación</option><option value="div">División</option>
+              <option value="pot">Potencia</option><option value="log">Logaritmo</option>
+              <option value="raiz">Raíz</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Conjunto (etiqueta)</label>
+          <select class="form-select" id="vb-conj-label" style="width:auto">
+            <option value="">Sin etiqueta</option>
+            <option value="N">ℕ Naturales</option>
+            <option value="Z">ℤ Enteros</option>
+            <option value="Q">ℚ Racionales</option>
+          </select>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="agregarEjVisual()">+ Agregar a la lista</button>
+      </div>
+
+      <!-- MODO LATEX -->
+      <div id="ej-mode-latex" style="display:none">
+        <div class="form-group">
+          <label class="form-label">LaTeX del ejercicio</label>
+          <input type="text" id="mctrl-ej-latex" class="form-input font-mono"
+            placeholder="Ej: \dfrac{3}{4} + \dfrac{1}{2}" oninput="previewLatex()">
+          <div class="latex-preview-box" id="latex-preview" style="margin-top:.4rem">
+            <span style="color:var(--c-text-3);font-size:.85rem">Vista previa aquí…</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Respuesta correcta</label>
+            <input type="text" id="mctrl-ej-resp" class="form-input font-mono" placeholder="Ej: 5/4 ó 81">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Operación (etiqueta)</label>
+            <select class="form-select" id="mctrl-ej-op">
+              <option value="">Sin etiqueta</option>
+              <option value="suma">Suma</option><option value="resta">Resta</option>
+              <option value="mult">Multiplicación</option><option value="div">División</option>
+              <option value="pot">Potencia</option><option value="log">Logaritmo</option>
+              <option value="raiz">Raíz</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Conjunto (etiqueta)</label>
+          <select class="form-select" id="mctrl-ej-conj" style="width:auto">
+            <option value="">Sin etiqueta</option>
+            <option value="N">ℕ Naturales</option>
+            <option value="Z">ℤ Enteros</option>
+            <option value="Q">ℚ Racionales</option>
+          </select>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="agregarEjManual()">+ Agregar a la lista</button>
+      </div>
+
+      <!-- Lista de ejercicios manuales -->
+      <div class="form-group" style="margin-top:1rem">
+        <label class="form-label">Ejercicios agregados (<span id="ej-count">0</span>)</label>
+        <div class="ej-manual-list" id="ej-manual-list">
+          <div style="color:var(--c-text-3);font-size:.84rem;text-align:center;padding:.75rem">Sin ejercicios aún</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="cerrarModal('modal-control')">Cancelar</button>
+      <button class="btn btn-outline btn-sm" onclick="guardarControl('borrador')">Guardar borrador</button>
+      <button class="btn btn-primary btn-sm" onclick="guardarControl('activo')">Guardar y activar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MODAL: CONFIRMAR ELIMINACIÓN
+═════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3 class="modal-title">¿Confirmar eliminación?</h3>
+      <button class="modal-close" onclick="cerrarModal('modal-delete')">✕</button>
+    </div>
+    <p id="delete-msg" style="color:var(--c-text-2);margin-bottom:.5rem;"></p>
+    <p style="color:var(--c-text-3);font-size:.84rem;">Esta acción no se puede deshacer.</p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="cerrarModal('modal-delete')">Cancelar</button>
+      <button class="btn btn-danger btn-sm" id="btn-delete-ok">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="js/api.js"></script>
+<script src="js/teacher.js"></script>
+</body>
+</html>
